@@ -8,7 +8,7 @@
  */
 
 #import "AppDelegate.h"
-
+#import "WXApiManager.h"
 #import "RCTRootView.h"
 
 @implementation AppDelegate
@@ -31,8 +31,8 @@
    * on the same Wi-Fi network.
    */
 
-  jsCodeLocation = [NSURL URLWithString:@"http://127.0.0.1:8081/index.ios.bundle?platform=ios&dev=true"];
-
+//  jsCodeLocation = [NSURL URLWithString:@"http://127.0.0.1:8081/index.ios.bundle?platform=ios&dev=true"];
+  jsCodeLocation = [NSURL URLWithString:@"http://192.168.1.100:8081/index.ios.bundle?platform=ios&dev=true"];
   /**
    * OPTION 2
    * Load from pre-bundled file on disk. The static bundle is automatically
@@ -51,7 +51,20 @@
   rootViewController.view = rootView;
   self.window.rootViewController = rootViewController;
   [self.window makeKeyAndVisible];
+  
+  //向微信注册
+//  [WXApi registerApp:@"wxd930ea5d5a258f4f" withDescription:@"pandaface 1.0"];
+  [WXApi registerApp:@"wx9f88297bef34ee2f" withDescription:@"熊猫表情 1.0"];
+  
   return YES;
+}
+
+- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url {
+  return  [WXApi handleOpenURL:url delegate:[WXApiManager sharedManager]];
+}
+
+- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
+  return [WXApi handleOpenURL:url delegate:[WXApiManager sharedManager]];
 }
 
 @end

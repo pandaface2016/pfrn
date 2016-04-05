@@ -1,7 +1,7 @@
 /* eslint-disable*/
 /**
  * 发现页面
- * https://github.com/facebook/react-native
+ * https://github.com/pandaface2016/pfrn.git
  */
 'use strict';
 
@@ -13,75 +13,61 @@ import React, {
     ListView,
     Text,
     Image,
-    ScrollView
+    ScrollView,
+    TouchableOpacity
 } from 'react-native';
+import Immutable from '../../util/immutable.js';
 import NavigationBar from '../../component/NavigationBar/NavigationBar.js';
-
-var THUMB_URLS = [
-    'http://ww4.sinaimg.cn/square/005Ctlmsjw1f0q2xooqkmj305k05k3yj.jpg',
-    'http://ww4.sinaimg.cn/square/005Ctlmsjw1f0q2xnxbz1j305k05k74e.jpg',
-    'http://ww1.sinaimg.cn/square/005Ctlmsjw1f0q2xmnbk0j305k05kjrg.jpg',
-    'http://ww1.sinaimg.cn/square/005Ctlmsjw1f0q2xnk4bnj305k05k3yl.jpg',
-    'http://ww4.sinaimg.cn/square/005Ctlmsjw1f0q2xlrw8zj305k05kmx8.jpg',
-    'http://ww3.sinaimg.cn/square/005Ctlmsjw1f0q2xm5bnyj305k05kmx9.jpg',
-    'http://ww4.sinaimg.cn/square/005Ctlmsjw1f0q2xmuhevj305k05kt8u.jpg',
-    'http://ww4.sinaimg.cn/square/005Ctlmsjw1f0q2xn33eyj305k05kjrh.jpg',
-    'http://ww4.sinaimg.cn/square/005Ctlmsjw1f0q2xndminj305k05k74g.jpg',
-];
 
 export default class Discover extends Component {
     constructor(props) {
         super(props);
 
-        // 初始化列表数据
-        var ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
-
-        this.state = {
-            dataSource: ds.cloneWithRows(['row 1', 'row 2', '3', '4', '5', '6', '7', '8', '9', '10'])
-        };
+        this._renderRow = this._renderRow.bind(this);
     }
 
     shouldComponentUpdate(nextProps, nextState) {
-        return false;
+        var next = Immutable.fromJS(nextProps.list);
+        var now = Immutable.fromJS(this.props.list);
+        return !Immutable.is(next, now);
     }
 
-    // 渲染图片宫格
-    renderGrid(data, rowNum, columnNum) {
-        return (
-            <View style={styles.pictureGrid}>
-
-            </View>
-        )
-    }
-
-    _renderRow(rowData: string, sectionID: number, rowID: number) {
-        var count = Math.ceil(Math.random() * 9);
+    _renderRow(rowData: object, sectionID: number, rowID: number) {
+        // var count = Math.ceil(Math.random() * 9);
+        var count = rowData.face_list.length;
         var rowNum = Math.ceil(count / 3);
         var columnNum = Math.ceil(count / rowNum);
         var pictureArr = [];
         for(var i = 0; i < rowNum; i++) {
             var arr = [];
             for (var j = 0; j < columnNum; j++) {
-                arr.push(THUMB_URLS[i * columnNum + j]);
+                arr.push(rowData.face_list[i * columnNum + j].url);
             }
             pictureArr.push(arr);
         }
-        // console.log(pictureArr);
+
         var PictureGrid = <View style={styles.pictureGrid}>
             {
                 pictureArr.map((rowitem, rowIndex) => {
                     return (
-                        <View key={rowIndex}
+                        <View 
+                            key={rowIndex}
                             style={styles.pictureGridRow}>
                             {
                                 rowitem.map((item, index) => {
-                                    var Item = item ? 
-                                        <View key={index}
-                                            style={styles.pictureItem}>
-                                             <Image 
-                                                style={styles.pictureImage}
-                                                source={{uri: item}}></Image>
-                                        </View> : null;
+                                    var Item = item ?
+                                        <TouchableOpacity
+                                            key={index}
+                                            onPress={() => {
+                                                this.props.initImageView('show', item)
+                                            }}>
+                                            <View 
+                                                style={styles.pictureItem}>
+                                                 <Image 
+                                                    style={styles.pictureImage}
+                                                    source={{uri: item}}></Image>
+                                            </View>
+                                        </TouchableOpacity> : null;
                                     return (Item);
                                 })
                             }
@@ -96,18 +82,18 @@ export default class Discover extends Component {
                 <View style={styles.cellHeader}>
                     <Image 
                         style={styles.photo}
-                        source={require('../../img/test/photo.jpeg')}/>
+                        source={{uri: rowData.avatar}}/>
                         <View style={styles.infoWrap}>
                             <View style={styles.titleWrap}>
-                                <Text style={styles.authorTitle}>表情之家</Text>
+                                <Text style={styles.authorTitle}>{rowData.face_user_name}</Text>
                             </View>
                             <View style={styles.signatureWrap}>
-                                <Text style={styles.signatureText}>如果表情包能当饭吃，我能养活整个亚欧大陆</Text>
+                                <Text style={styles.signatureText}>{rowData.signature}</Text>
                             </View>
                         </View>
                 </View>
                 <View style={styles.contentWrap}>
-                    <Text style={styles.contentText}>还有355天就是鸡年除夕了，时间过得真快，回想上次除夕，好像就在昨天一样，在这里我提前祝大家鸡年快了</Text>
+                    <Text style={styles.contentText}>{rowData.content}</Text>
                 </View>
                 {PictureGrid}
             </View>
@@ -116,13 +102,16 @@ export default class Discover extends Component {
 
     render() {
         console.log('render discover');
+        // 初始化列表数据
+        var ds = new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2});
+        var dataSource = ds.cloneWithRows(this.props.list);
         return (
             <View style={styles.container}>
                 <NavigationBar title={'发现'}/>
                 <ScrollView style={styles.scrollView}
                     automaticallyAdjustContentInsets={false}>
                     <ListView
-                        dataSource={this.state.dataSource}
+                        dataSource={dataSource}
                         renderRow={this._renderRow}
                         scrollRenderAheadDistance={200}
                     />
@@ -199,6 +188,7 @@ const styles = StyleSheet.create({
     },
     pictureImage: {
         width: 113,
-        height: 113
+        height: 113,
+        resizeMode: 'contain'
     }
 });
